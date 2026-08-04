@@ -1,0 +1,1 @@
+import type {Payment} from '../types';import {isMockMode} from '../config/blockchain';import {mockStore} from '../mocks/store';import {request} from './client';export async function getMerchantPayments(id:string){if(isMockMode)return mockStore.payments();return (await request<{payments:Payment[]}>(`/merchants/${id}/payments`)).payments}
