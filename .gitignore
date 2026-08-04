@@ -1,9 +1,17 @@
 node_modules/
 dist/
 .env
+server/.env
 coverage/
 *.log
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts
 data/
+server/data/
 artifacts/
+server/artifacts/
 cache/
+server/cache/
 typechain-types/
+server/typechain-types/

@@ -64,6 +64,16 @@ export class InvoiceService {
 export class PaymentService {
   constructor(private readonly database: MemoryStore = store) {}
 
+  quote(invoiceReference: string, asset: Asset): { cryptoAmount: string; exchangeRate: number } {
+    const invoice = this.database.getInvoice(invoiceReference);
+    if (!invoice) throw new Error("INVOICE_NOT_FOUND");
+    if (new Date(invoice.expiresAt) < new Date()) throw new Error("INVOICE_EXPIRED");
+    if (invoice.status === "PAID") throw new Error("INVOICE_ALREADY_PAID");
+    const exchangeRate = asset === "ETH" ? config.GHS_PER_ETH : config.GHS_PER_USDC;
+    const decimals = asset === "ETH" ? 8 : 6;
+    return { cryptoAmount: (invoice.amountGhs / exchangeRate).toFixed(decimals), exchangeRate };
+  }
+
   async process(input: {
     invoiceReference: string;
     txHash: `0x${string}`;

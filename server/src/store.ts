@@ -36,6 +36,10 @@ export class MemoryStore {
     return this.payments.get(txHash.toLowerCase());
   }
 
+  getPaymentById(id: string): Payment | undefined {
+    return [...this.payments.values()].find((payment) => payment.id === id);
+  }
+
   listPayments(merchantId?: string): Payment[] {
     const allowed = merchantId
       ? new Set(this.listInvoices(merchantId).map((invoice) => invoice.reference))

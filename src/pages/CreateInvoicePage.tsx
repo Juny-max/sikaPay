@@ -1,0 +1,14 @@
+import { ArrowLeft, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
+import { createInvoice } from '../api/invoices';
+import { InvoiceCard } from '../components/InvoiceCard';
+import { QRCodeCard } from '../components/QRCodeCard';
+import type { Invoice } from '../types';
+
+export function CreateInvoicePage() {
+  const [invoice, setInvoice] = useState<Invoice>(); const [loading, setLoading] = useState(false), [error, setError] = useState('');
+  const submit = async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); setLoading(true); setError(''); const form = new FormData(event.currentTarget); try { setInvoice(await createInvoice({ amountGhs: Number(form.get('amount')) })); } catch (e) { setError(e instanceof Error ? e.message : 'Could not generate the payment request.'); } finally { setLoading(false); } };
+  if (invoice) return <div className="shell py-10"><div className="mb-8 text-center"><span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-emerald text-white"><CheckCircle2 /></span><p className="eyebrow mt-4">Ready to collect</p><h1 className="mt-2 text-3xl font-extrabold">Payment request generated</h1></div><div className="mx-auto grid max-w-3xl gap-5 md:grid-cols-2"><InvoiceCard invoice={invoice} /><QRCodeCard value={invoice.paymentUrl} /></div><div className="mx-auto mt-6 flex max-w-3xl justify-center gap-3"><Link className="btn-primary" to={`/merchant/invoice/${invoice.reference}`}>View live invoice <ArrowRight size={17} /></Link><button className="btn-secondary" onClick={() => setInvoice(undefined)}>Create another</button></div></div>;
+  return <div className="shell py-10"><Link to="/merchant" className="mb-6 inline-flex items-center gap-2 text-sm font-bold text-forest"><ArrowLeft size={17} />Back to dashboard</Link><div className="mx-auto grid max-w-4xl gap-10 lg:grid-cols-[.8fr_1.2fr]"><div><p className="eyebrow">New payment</p><h1 className="mt-3 text-4xl font-extrabold">Create a payment request</h1><p className="mt-4 leading-7 text-[#64736c]">Enter the Ghana Cedi amount. Your verified merchant profile supplies the store and Mobile Money details.</p></div><form className="card space-y-5 p-6 sm:p-8" onSubmit={submit}><div><label className="label" htmlFor="amount">Amount in GHS</label><div className="relative"><span className="absolute left-4 top-3.5 font-bold text-[#75837c]">GH₵</span><input id="amount" name="amount" required min="1" step="0.01" type="number" defaultValue="20" className="input !pl-14 text-xl font-bold" /></div></div>{error && <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}<button disabled={loading} className="btn-primary w-full">{loading ? 'Creating on Sepolia…' : 'Generate payment request'}<ArrowRight size={18} /></button></form></div></div>;
+}
