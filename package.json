@@ -6,9 +6,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:server": "pnpm --dir server dev",
-    "test:server": "pnpm --dir server test",
-    "build:server": "pnpm --dir server build",
+    "dev:server": "corepack pnpm --dir server dev",
+    "test:server": "corepack pnpm --dir server test",
+    "build:server": "corepack pnpm --dir server build",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"

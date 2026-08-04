@@ -11,16 +11,16 @@ React, Vite, TypeScript, Tailwind CSS, React Router, wagmi, viem, RainbowKit, Ta
 ## Run locally
 
 ```bash
-pnpm install
-pnpm --dir server install
+corepack pnpm install
+corepack pnpm --dir server install
 cp .env.example .env
-pnpm dev
+corepack pnpm dev
 ```
 
 Start the API in a second terminal:
 
 ```bash
-pnpm dev:server
+corepack pnpm dev:server
 ```
 
 The application runs at `http://localhost:5173` and the API at `http://localhost:4000`. See `server/README.md` for contract deployment and backend API details.
