@@ -1,0 +1,2 @@
+import type {Abi} from 'viem';export const sikaPayAbi:Abi=[{type:'function',name:'payInvoice',stateMutability:'payable',inputs:[{name:'invoiceId',type:'bytes32'},{name:'token',type:'address'},{name:'amount',type:'uint256'}],outputs:[]}];
+export const usdcAbi=[{type:'function',name:'approve',stateMutability:'nonpayable',inputs:[{name:'spender',type:'address'},{name:'amount',type:'uint256'}],outputs:[{name:'',type:'bool'}]}] as const;
