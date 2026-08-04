@@ -1,5 +1,19 @@
-import type {Invoice,Payment,PreparedPayment,SupportedToken} from '../types';import type {BackendDataResponse,BackendPayment} from '../types/backend';import {contractAddress,isMockMode} from '../config/blockchain';import {mockStore} from '../mocks/store';import {request} from './client';import {mapPayment} from './mappers';
-const CACHE='sikapay_confirmed_payments';const readCache=():Payment[]=>{try{return JSON.parse(localStorage.getItem(CACHE)||'[]') as Payment[]}catch{return[]}};const saveCache=(payment:Payment)=>localStorage.setItem(CACHE,JSON.stringify([payment,...readCache().filter(p=>p.transactionId!==payment.transactionId)]));
-export async function preparePayment(invoice:Invoice,token:SupportedToken){if(isMockMode)return mockStore.prepare(invoice,token);const rate=token==='ETH'?65000:15.5;return{transactionId:`pending-${invoice.id}`,invoiceId:invoice.id,token,amountCrypto:(invoice.amountGhs/rate).toFixed(token==='ETH'?6:2),amountGhs:invoice.amountGhs,exchangeRate:rate,contractAddress,recipientAddress:contractAddress} as PreparedPayment}
-export async function submitPayment(input:{invoiceReference:string;txHash:`0x${string}`;senderAddress:`0x${string}`;asset:SupportedToken;cryptoAmount:string}){const response=await request<BackendDataResponse<BackendPayment>>('/api/payments',{method:'POST',body:JSON.stringify(input)});const payment=mapPayment(response.data);saveCache(payment);return payment}
-export async function getPayment(id:string){if(isMockMode)return mockStore.payments().find(p=>p.transactionId===id);return readCache().find(p=>p.transactionId===id)}
+import type {Invoice,Payment,PreparedPayment,SupportedToken} from '../types';
+import type {BackendDataResponse,BackendPayment} from '../types/backend';
+import {contractAddress,isMockMode} from '../config/blockchain';
+import {mockStore} from '../mocks/store';
+import {request} from './client';
+import {mapPayment} from './mappers';
+
+export async function preparePayment(invoice:Invoice,token:SupportedToken):Promise<PreparedPayment>{
+  if(isMockMode)return mockStore.prepare(invoice,token);
+  const response=await request<BackendDataResponse<{cryptoAmount:string;exchangeRate:number}>>('/api/payments/quote',{method:'POST',body:JSON.stringify({invoiceReference:invoice.reference||invoice.id,asset:token})});
+  return{transactionId:`pending-${invoice.id}`,invoiceId:invoice.id,token,amountCrypto:response.data.cryptoAmount,amountGhs:invoice.amountGhs,exchangeRate:response.data.exchangeRate,contractAddress,recipientAddress:contractAddress};
+}
+export async function submitPayment(input:{invoiceReference:string;txHash:`0x${string}`;senderAddress:`0x${string}`;asset:SupportedToken;cryptoAmount:string}){
+  return mapPayment((await request<BackendDataResponse<BackendPayment>>('/api/payments',{method:'POST',body:JSON.stringify(input)})).data);
+}
+export async function getPayment(id:string):Promise<Payment|undefined>{
+  if(isMockMode)return mockStore.payments().find(payment=>payment.transactionId===id);
+  return mapPayment((await request<BackendDataResponse<BackendPayment>>(`/api/payments/${encodeURIComponent(id)}`)).data);
+}

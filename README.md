@@ -2,7 +2,7 @@
 
 SikaPay is an Ethereum-to-Mobile Money payment bridge for Ghana. Merchants authenticate with Supabase, create GHS invoices, and receive a Mobile Money settlement record after customers pay the invoice contract with ETH or USDC on Sepolia.
 
-This pnpm workspace contains the React frontend at the repository root and the Express API in `backend/`.
+This pnpm workspace contains the React frontend at the repository root and the Express API in `server/`.
 
 ## Stack
 
@@ -12,24 +12,24 @@ This pnpm workspace contains the React frontend at the repository root and the E
 
 ## Local setup
 
-Requirements: Node.js 20+ and pnpm 10.
+Requirements: Node.js 20+ and Corepack.
 
 ```bash
-pnpm install
+corepack pnpm install
 cp .env.example .env
-cp backend/.env.example backend/.env
+cp server/.env.example server/.env
 ```
 
 Fill in both environment files, then start the API and frontend in separate terminals:
 
 ```bash
-pnpm dev:api
-pnpm dev
+corepack pnpm dev:api
+corepack pnpm dev
 ```
 
 The frontend runs at `http://localhost:5173`; the API runs at `http://localhost:4000`.
 
-Before signing up, apply `backend/supabase/migrations/202608040001_initial_schema.sql` in the Supabase SQL editor. Add `http://localhost:5173` as an allowed Site URL/redirect URL in Supabase Auth.
+Before signing up, apply `server/supabase/migrations/202608040001_initial_schema.sql` in the Supabase SQL editor. Add `http://localhost:5173` as an allowed Site URL/redirect URL in Supabase Auth.
 
 ## Environment and security
 
@@ -46,7 +46,7 @@ VITE_WALLETCONNECT_PROJECT_ID=
 VITE_ENABLE_MOCK_MODE=false
 ```
 
-Server secrets belong only in `backend/.env`. Never prefix a private key, Supabase secret key, or RPC secret with `VITE_`; all Vite variables are public in the browser bundle. Both `.env` files are ignored by Git.
+Server secrets belong only in `server/.env` (the backend also supports the existing root `.env` during local development). Never prefix a private key, Supabase secret key, or RPC secret with `VITE_`; all Vite variables are public in the browser bundle. Both `.env` files are ignored by Git.
 
 If credentials are ever pasted into chat, logs, issues, or commits, rotate them before running the application. Use a dedicated, minimally funded Sepolia deployer/settlement wallet rather than a personal wallet.
 
@@ -72,16 +72,16 @@ Use `PAYMENT_MODE=simulation` only for UI demos without real blockchain verifica
 ## Verification
 
 ```bash
-pnpm build
-pnpm build:api
-pnpm test:api
+corepack pnpm build
+corepack pnpm build:api
+corepack pnpm test:api
 ```
 
 Contract commands run from the API workspace:
 
 ```bash
-pnpm --filter sikapay-backend contract:compile
-pnpm --filter sikapay-backend contract:test
+corepack pnpm --filter sikapay-backend contract:compile
+corepack pnpm --filter sikapay-backend contract:test
 ```
 
 ## Main API routes
@@ -97,7 +97,7 @@ pnpm --filter sikapay-backend contract:test
 | `POST` | `/api/payments` | Public, chain-verified in RPC mode |
 | `GET` | `/api/payments` | Merchant token |
 
-See `backend/README.md` for API, Supabase, and contract deployment details.
+See `server/README.md` for API, Supabase, and contract deployment details.
 
 ## Visual asset credit
 

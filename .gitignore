@@ -15,3 +15,4 @@ cache/
 server/cache/
 typechain-types/
 server/typechain-types/
+.claude/

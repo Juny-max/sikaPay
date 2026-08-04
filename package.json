@@ -6,10 +6,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:api": "pnpm --filter sikapay-backend dev",
+    "dev:api": "corepack pnpm --filter sikapay-backend dev",
     "build": "tsc -b && vite build",
-    "build:api": "pnpm --filter sikapay-backend build",
-    "test:api": "pnpm --filter sikapay-backend test",
+    "build:api": "corepack pnpm --filter sikapay-backend build",
+    "test:api": "corepack pnpm --filter sikapay-backend test",
     "lint": "eslint .",
     "preview": "vite preview"
   },
