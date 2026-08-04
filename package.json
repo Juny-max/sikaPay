@@ -1,0 +1,41 @@
+{
+  "name": "sikapay-backend",
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.14.0",
+  "private": true,
+  "description": "SikaPay Ethereum-to-Mobile-Money bridge API",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "contract:compile": "hardhat compile",
+    "contract:test": "hardhat test",
+    "contract:deploy": "hardhat run scripts/deploy.cjs --network sepolia",
+    "verify:setup": "tsx scripts/verify-setup.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@supabase/server": "^1.4.1",
+    "@supabase/supabase-js": "^2.55.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "ethers": "^6.17.0",
+    "express": "^5.1.0",
+    "helmet": "^8.1.0",
+    "viem": "^2.23.5",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^6.1.0",
+    "@types/chai": "^4.3.20",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.1",
+    "@types/node": "^22.13.10",
+    "chai": "^4.5.0",
+    "hardhat": "^2.26.3",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.8"
+  }
+}
