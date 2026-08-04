@@ -1,29 +1,5 @@
-import type { Invoice } from '../types';
-import { request } from './client';
-
-type BackendInvoice = {
-  id: string; reference: string; onchainId: `0x${string}`; merchantId: string;
-  merchantName: string; merchantPhone: string; amountGhs: number;
-  status: 'PENDING' | 'PROCESSING' | 'PAID' | 'FAILED'; expiresAt: string;
-};
-
-const mapInvoice = (value: BackendInvoice): Invoice => ({
-  ...value,
-  network: 'MTN',
-  description: `Payment to ${value.merchantName}`,
-  status: value.status === 'PAID' ? 'COMPLETED' : value.status === 'PROCESSING' ? 'PROCESSING_MOMO' : value.status === 'FAILED' ? 'FAILED' : 'AWAITING_PAYMENT',
-  paymentUrl: `${window.location.origin}/pay/${value.reference}`
-});
-
-export async function createInvoice(data: { amountGhs: number }) {
-  const response = await request<{ data: BackendInvoice }>('/invoices', { method: 'POST', body: JSON.stringify(data) });
-  return mapInvoice(response.data);
-}
-export async function getInvoice(reference: string) {
-  const response = await request<{ data: BackendInvoice }>(`/invoices/${encodeURIComponent(reference)}`);
-  return mapInvoice(response.data);
-}
-export async function getInvoices() {
-  const response = await request<{ data: BackendInvoice[] }>('/invoices');
-  return response.data.map(mapInvoice);
-}
+import type {Invoice} from '../types';import type {BackendDataResponse,BackendInvoice,BackendListResponse} from '../types/backend';import {isMockMode} from '../config/blockchain';import {mockStore} from '../mocks/store';import {request} from './client';import {mapInvoice} from './mappers';
+type NewInvoice=Omit<Invoice,'id'|'status'|'expiresAt'|'paymentUrl'>;
+export async function createInvoice(data:NewInvoice){if(isMockMode)return mockStore.createInvoice(data);const response=await request<BackendDataResponse<BackendInvoice>>('/api/invoices',{method:'POST',auth:true,body:JSON.stringify({amountGhs:data.amountGhs})});return mapInvoice(response.data)}
+export async function getInvoice(reference:string){if(isMockMode){await new Promise(r=>setTimeout(r,350));const value=mockStore.getInvoice(reference);if(!value)throw new Error('Invoice not found');return value}return mapInvoice((await request<BackendDataResponse<BackendInvoice>>(`/api/invoices/${encodeURIComponent(reference)}`)).data)}
+export async function getMerchantInvoices(){if(isMockMode)return[];return (await request<BackendListResponse<BackendInvoice>>('/api/invoices',{auth:true})).data.map(mapInvoice)}

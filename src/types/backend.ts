@@ -1,0 +1,4 @@
+export type BackendInvoiceStatus='PENDING'|'PROCESSING'|'PAID'|'FAILED';export type BackendPayoutStatus='NOT_STARTED'|'PROCESSING'|'SUCCESS'|'FAILED';
+export interface BackendInvoice{id:string;reference:string;onchainId:`0x${string}`;onchainCreationTxHash?:`0x${string}`;merchantId:string;merchantName:string;merchantPhone:string;amountGhs:number;status:BackendInvoiceStatus;qrPayload:string;createdAt:string;expiresAt:string;payment?:BackendPayment}
+export interface BackendPayment{id:string;invoiceReference:string;txHash:`0x${string}`;senderAddress:`0x${string}`;asset:'ETH'|'USDC';cryptoAmount:string;amountGhs:number;exchangeRate:number;chainId:number;confirmedAt:string;payout:{status:BackendPayoutStatus;network:'MTN Mobile Money';reference?:string;completedAt?:string;failureReason?:string}}
+export interface BackendListResponse<T>{data:T[]}export interface BackendDataResponse<T>{data:T}

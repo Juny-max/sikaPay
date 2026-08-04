@@ -1,26 +1,3 @@
-import { supabase } from '../config/supabase';
-
-export const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
-
-export class ApiError extends Error {
-  constructor(public readonly code: string, message: string, public readonly status: number) {
-    super(message);
-  }
-}
-
-export async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const { data: { session } } = await supabase.auth.getSession();
-  const response = await fetch(`${apiBase}${path}`, {
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
-      ...init?.headers
-    }
-  });
-  const body = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new ApiError(body?.error?.code || 'REQUEST_FAILED', body?.error?.message || `Request failed (${response.status})`, response.status);
-  }
-  return body as T;
-}
+import {supabase} from '../config/supabase';export const apiBase=import.meta.env.VITE_API_URL||'';interface BackendErrorBody{error?:{code?:string;message?:string;details?:unknown}}
+export class ApiError extends Error{constructor(public readonly code:string,message:string,public readonly status:number,public readonly details?:unknown){super(message)}}
+export async function request<T>(path:string,init:RequestInit&{auth?:boolean}={}):Promise<T>{const {auth,...requestInit}=init;const headers=new Headers(requestInit.headers);headers.set('Content-Type','application/json');if(auth){const {data}=await supabase.auth.getSession();const token=data.session?.access_token;if(!token)throw new ApiError('AUTH_REQUIRED','Please sign in to continue.',401);headers.set('Authorization',`Bearer ${token}`)}let response:Response;try{response=await fetch(`${apiBase}${path}`,{...requestInit,headers})}catch{throw new ApiError('NETWORK_ERROR','Unable to reach the SikaPay API.',0)}const body=await response.json().catch(()=>({})) as BackendErrorBody;if(!response.ok){const code=body.error?.code||'REQUEST_FAILED';if(code==='AUTH_REQUIRED'||code==='INVALID_TOKEN')await supabase.auth.signOut();if(code==='MERCHANT_PROFILE_REQUIRED')window.dispatchEvent(new Event('sikapay:merchant-required'));throw new ApiError(code,body.error?.message||`Request failed (${response.status})`,response.status,body.error?.details)}return body as T}

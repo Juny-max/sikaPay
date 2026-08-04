@@ -1,36 +1,5 @@
-import type { Invoice, Payment, PreparedPayment, SupportedToken } from '../types';
-import { contractAddress } from '../config/blockchain';
-import { request } from './client';
-
-type BackendPayment = {
-  id: string; invoiceReference: string; txHash: string; senderAddress: string;
-  asset: SupportedToken; cryptoAmount: string; amountGhs: number; confirmedAt: string;
-  payout: { status: 'NOT_STARTED' | 'PROCESSING' | 'SUCCESS' | 'FAILED'; reference?: string };
-};
-
-export const mapPayment = (value: BackendPayment): Payment => ({
-  transactionId: value.id,
-  invoiceId: value.invoiceReference,
-  status: value.payout.status === 'SUCCESS' ? 'COMPLETED' : value.payout.status === 'FAILED' ? 'FAILED' : 'PROCESSING_MOMO',
-  blockchainStatus: 'CONFIRMED', payoutStatus: value.payout.status === 'NOT_STARTED' ? 'PENDING' : value.payout.status,
-  amountCrypto: value.cryptoAmount, token: value.asset, amountGhs: value.amountGhs,
-  txHash: value.txHash, momoReference: value.payout.reference,
-  customerWallet: value.senderAddress, createdAt: value.confirmedAt
-});
-
-export async function preparePayment(invoice: Invoice, token: SupportedToken): Promise<PreparedPayment> {
-  const response = await request<{ data: { cryptoAmount: string; exchangeRate: number } }>('/payments/quote', {
-    method: 'POST', body: JSON.stringify({ invoiceReference: invoice.reference, asset: token })
-  });
-  return { invoiceId: invoice.reference, token, amountGhs: invoice.amountGhs, contractAddress, amountCrypto: response.data.cryptoAmount, exchangeRate: response.data.exchangeRate };
-}
-
-export async function confirmPayment(input: { invoiceReference: string; txHash: string; senderAddress: string; asset: SupportedToken; cryptoAmount: string }) {
-  const response = await request<{ data: BackendPayment }>('/payments', { method: 'POST', body: JSON.stringify(input) });
-  return mapPayment(response.data);
-}
-
-export async function getPayment(id: string) {
-  const response = await request<{ data: BackendPayment }>(`/payments/${encodeURIComponent(id)}`);
-  return mapPayment(response.data);
-}
+import type {Invoice,Payment,PreparedPayment,SupportedToken} from '../types';import type {BackendDataResponse,BackendPayment} from '../types/backend';import {contractAddress,isMockMode} from '../config/blockchain';import {mockStore} from '../mocks/store';import {request} from './client';import {mapPayment} from './mappers';
+const CACHE='sikapay_confirmed_payments';const readCache=():Payment[]=>{try{return JSON.parse(localStorage.getItem(CACHE)||'[]') as Payment[]}catch{return[]}};const saveCache=(payment:Payment)=>localStorage.setItem(CACHE,JSON.stringify([payment,...readCache().filter(p=>p.transactionId!==payment.transactionId)]));
+export async function preparePayment(invoice:Invoice,token:SupportedToken){if(isMockMode)return mockStore.prepare(invoice,token);const rate=token==='ETH'?65000:15.5;return{transactionId:`pending-${invoice.id}`,invoiceId:invoice.id,token,amountCrypto:(invoice.amountGhs/rate).toFixed(token==='ETH'?6:2),amountGhs:invoice.amountGhs,exchangeRate:rate,contractAddress,recipientAddress:contractAddress} as PreparedPayment}
+export async function submitPayment(input:{invoiceReference:string;txHash:`0x${string}`;senderAddress:`0x${string}`;asset:SupportedToken;cryptoAmount:string}){const response=await request<BackendDataResponse<BackendPayment>>('/api/payments',{method:'POST',body:JSON.stringify(input)});const payment=mapPayment(response.data);saveCache(payment);return payment}
+export async function getPayment(id:string){if(isMockMode)return mockStore.payments().find(p=>p.transactionId===id);return readCache().find(p=>p.transactionId===id)}

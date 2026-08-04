@@ -1,74 +1,104 @@
 # SikaPay
 
-**Global Crypto. Local Payments.**
+SikaPay is an Ethereum-to-Mobile Money payment bridge for Ghana. Merchants authenticate with Supabase, create GHS invoices, and receive a Mobile Money settlement record after customers pay the invoice contract with ETH or USDC on Sepolia.
 
-SikaPay is an Ethereum-to-Mobile Money payment bridge designed for Ghana. Customers pay an invoice with ETH or USDC; after on-chain confirmation, the merchant receives the Ghana Cedi equivalent through Mobile Money. The Vite frontend lives at the repository root and the Express/Hardhat backend lives in `server/`.
+This pnpm workspace contains the React frontend at the repository root and the Express API in `backend/`.
 
 ## Stack
 
-React, Vite, TypeScript, Tailwind CSS, React Router, wagmi, viem, RainbowKit, TanStack Query, react-qr-code, html5-qrcode, and Lucide.
+- Frontend: React, Vite, TypeScript, Tailwind CSS, React Router, RainbowKit, wagmi, viem, ethers, Motion, and GSAP
+- Backend: Express, TypeScript, Supabase Auth/Postgres, ethers, and Solidity/Hardhat
+- Network: Ethereum Sepolia with ETH and Sepolia USDC
 
-## Run locally
+## Local setup
+
+Requirements: Node.js 20+ and pnpm 10.
 
 ```bash
-corepack pnpm install
-corepack pnpm --dir server install
+pnpm install
 cp .env.example .env
-corepack pnpm dev
+cp backend/.env.example backend/.env
 ```
 
-Start the API in a second terminal:
+Fill in both environment files, then start the API and frontend in separate terminals:
 
 ```bash
-corepack pnpm dev:server
+pnpm dev:api
+pnpm dev
 ```
 
-The application runs at `http://localhost:5173` and the API at `http://localhost:4000`. See `server/README.md` for contract deployment and backend API details.
+The frontend runs at `http://localhost:5173`; the API runs at `http://localhost:4000`.
 
-## Environment
+Before signing up, apply `backend/supabase/migrations/202608040001_initial_schema.sql` in the Supabase SQL editor. Add `http://localhost:5173` as an allowed Site URL/redirect URL in Supabase Auth.
+
+## Environment and security
+
+The root `.env` contains only browser-safe configuration:
 
 ```env
-VITE_API_BASE_URL=http://localhost:5000/api
+VITE_API_URL=
+VITE_SUPABASE_URL=
+VITE_SUPABASE_PUBLISHABLE_KEY=
 VITE_CHAIN_ID=11155111
 VITE_SIKAPAY_CONTRACT_ADDRESS=
-VITE_USDC_TOKEN_ADDRESS=
+VITE_USDC_CONTRACT_ADDRESS=
 VITE_WALLETCONNECT_PROJECT_ID=
-VITE_ENABLE_MOCK_MODE=true
+VITE_ENABLE_MOCK_MODE=false
 ```
 
-Never put private keys, payout-provider secrets, or server API keys in these variables. Browser variables prefixed with `VITE_` are public. A WalletConnect project ID is optional for the resilient mock demo, but should be set for production wallet connections.
+Server secrets belong only in `backend/.env`. Never prefix a private key, Supabase secret key, or RPC secret with `VITE_`; all Vite variables are public in the browser bundle. Both `.env` files are ignored by Git.
 
-## Demo flow
+If credentials are ever pasted into chat, logs, issues, or commits, rotate them before running the application. Use a dedicated, minimally funded Sepolia deployer/settlement wallet rather than a personal wallet.
 
-1. Open **Merchant dashboard**, then create a GH₵ invoice.
-2. Share or scan its generated QR code, or use **Load demo invoice** on `/pay`.
-3. Select ETH or USDC. Connect a Sepolia wallet, or continue without one in mock mode.
-4. Confirm payment and watch blockchain confirmation, bridge processing, and Mobile Money payout complete in about eight seconds.
-5. Return to the merchant dashboard to see the persisted payment.
+## Authentication and roles
 
-Mock invoices and new payments are stored in browser `localStorage`; seeded merchant activity remains available after refresh. The UI does not label this as fake so it remains presentation-ready. For this hackathon, the Mobile Money payout adapter and blockchain timing are simulated. No actual funds move in mock mode.
+- Merchants sign up and sign in through Supabase Auth.
+- The frontend sends the Supabase access token as `Authorization: Bearer <token>`.
+- A signed-in user completes merchant onboarding through `PUT /api/merchants/me`.
+- Merchant dashboard, invoice, and settings routes are protected.
+- Customer landing, invoice payment, and transaction routes remain public; customers do not create accounts.
+- The API derives merchant identity from the verified JWT and does not trust a browser-supplied merchant ID.
 
-## Backend API contract
+## Payment flow
 
-Set `VITE_ENABLE_MOCK_MODE=false` to use the REST service at `VITE_API_BASE_URL`:
+1. A merchant creates a GHS invoice through `POST /api/invoices`.
+2. The customer opens or scans the public invoice reference and connects a Sepolia wallet.
+3. ETH calls `payInvoice(onchainId, zeroAddress, amount)` with the ETH value. USDC first approves the SikaPay contract, then calls `payInvoice(onchainId, usdcAddress, amount)`.
+4. The frontend waits for the wallet receipt and submits the transaction hash to `POST /api/payments`.
+5. In `PAYMENT_MODE=rpc`, the API verifies the contract event and payment details on Sepolia before returning success. The UI never marks a payment successful from a wallet popup alone.
 
-| Method | Endpoint | Purpose |
+Use `PAYMENT_MODE=simulation` only for UI demos without real blockchain verification. Use `PAYMENT_MODE=rpc` for the hackathon judging flow.
+
+## Verification
+
+```bash
+pnpm build
+pnpm build:api
+pnpm test:api
+```
+
+Contract commands run from the API workspace:
+
+```bash
+pnpm --filter sikapay-backend contract:compile
+pnpm --filter sikapay-backend contract:test
+```
+
+## Main API routes
+
+| Method | Endpoint | Access |
 | --- | --- | --- |
-| POST | `/invoices` | Create an invoice |
-| GET | `/invoices/:invoiceId` | Fetch an invoice |
-| GET | `/merchants/:merchantId/payments` | Merchant payment history |
-| POST | `/payments/prepare` | Lock quote and prepare transaction |
-| POST | `/payments/confirm` | Submit transaction hash |
-| GET | `/payments/:transactionId` | Poll payment and payout status |
+| `GET` | `/health` | Public |
+| `GET` | `/api/me` | Merchant token |
+| `PUT` | `/api/merchants/me` | Merchant token |
+| `POST` | `/api/invoices` | Merchant token |
+| `GET` | `/api/invoices` | Merchant token |
+| `GET` | `/api/invoices/:reference` | Public |
+| `POST` | `/api/payments` | Public, chain-verified in RPC mode |
+| `GET` | `/api/payments` | Merchant token |
 
-The typed response models live in `src/types`; the isolated REST layer lives in `src/api`. Payment status polling uses a three-second interval against a live backend.
-
-## Smart-contract integration notes
-
-Sepolia (`11155111`) is the default chain. In live mode, the API’s `prepare` response supplies the exact recipient and crypto amount. The frontend submits a real native ETH transfer or ERC-20 USDC `transfer` through the connected wallet, waits for a successful Sepolia receipt, and sends the resulting transaction hash to `/payments/confirm`. Contract and USDC addresses come only from environment configuration. The server must independently validate invoice amount, chain ID, recipient, receipt confirmations, token transfer logs, replay protection, and invoice state before initiating a payout. If the deployed SikaPay contract requires a custom payment method instead of direct transfers, replace these two wallet calls with that contract ABI while keeping the same prepare/confirm lifecycle.
-
-The merchant is always presented with a GHS/Mobile Money settlement; crypto is customer-side tender only.
+See `backend/README.md` for API, Supabase, and contract deployment details.
 
 ## Visual asset credit
 
-The Ethereum diamond used on the landing page is the official Ethereum project mark, sourced from [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:ETHEREUM-YOUTUBE-PROFILE-PIC.png) under CC BY 3.0. The Ethereum market photograph is by Jakub Zerdzicki, sourced from [Pexels](https://www.pexels.com/photo/ethereum-coin-and-stock-market-graph-interaction-31220975/). Scroll-linked interface motion is implemented with Motion for React and respects the operating system’s reduced-motion preference.
+The Ethereum mark is the official project mark sourced from [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:ETHEREUM-YOUTUBE-PROFILE-PIC.png) under CC BY 3.0. The market photograph is by Jakub Zerdzicki from [Pexels](https://www.pexels.com/photo/ethereum-coin-and-stock-market-graph-interaction-31220975/). Motion respects the operating system's reduced-motion preference.
