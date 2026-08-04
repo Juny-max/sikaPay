@@ -41,6 +41,22 @@ export function createApp() {
   app.use(cors({ origin: config.FRONTEND_ORIGIN.split(",").map((value) => value.trim()) }));
   app.use(express.json({ limit: "32kb" }));
 
+  app.get("/", (_request, response) => {
+    response.json({
+      service: "SikaPay API",
+      status: "running",
+      mode: config.PAYMENT_MODE,
+      frontend: config.FRONTEND_ORIGIN.split(",")[0],
+      endpoints: {
+        health: "/health",
+        currentUser: "/api/me",
+        merchantProfile: "/api/merchants/me",
+        invoices: "/api/invoices",
+        payments: "/api/payments"
+      }
+    });
+  });
+
   app.get("/health", (_request, response) => {
     response.json({ status: "ok", service: "sikapay-api", mode: config.PAYMENT_MODE });
   });
