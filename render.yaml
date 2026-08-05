@@ -4,8 +4,8 @@ services:
     runtime: node
     plan: free
     region: oregon
-    buildCommand: corepack enable && corepack pnpm install --frozen-lockfile && corepack pnpm --filter sikapay-backend build
-    startCommand: corepack pnpm --filter sikapay-backend start
+    buildCommand: pnpm install --frozen-lockfile && pnpm --filter sikapay-backend build
+    startCommand: pnpm --filter sikapay-backend start
     healthCheckPath: /health
     autoDeploy: true
     envVars:

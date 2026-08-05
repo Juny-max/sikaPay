@@ -91,13 +91,13 @@ Create a Render Web Service from this repository. Render can read `render.yaml`.
 The backend build command is:
 
 ```bash
-corepack pnpm install --frozen-lockfile && corepack pnpm --filter sikapay-backend build
+pnpm install --frozen-lockfile && pnpm --filter sikapay-backend build
 ```
 
 The backend start command is:
 
 ```bash
-corepack pnpm --filter sikapay-backend start
+pnpm --filter sikapay-backend start
 ```
 
 Set these Render environment variables in the dashboard:
