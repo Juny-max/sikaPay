@@ -77,6 +77,77 @@ corepack pnpm build:api
 corepack pnpm test:api
 ```
 
+## Deployment
+
+Recommended hackathon setup:
+
+- Vercel hosts the React/Vite frontend from the repository root.
+- Render hosts the Express backend with `render.yaml`.
+- Supabase stores auth, merchants, invoices, payments, and payouts.
+
+### Backend on Render
+
+Create a Render Web Service from this repository. Render can read `render.yaml`.
+The backend build command is:
+
+```bash
+corepack pnpm install --frozen-lockfile && corepack pnpm --filter sikapay-backend build
+```
+
+The backend start command is:
+
+```bash
+corepack pnpm --filter sikapay-backend start
+```
+
+Set these Render environment variables in the dashboard:
+
+```env
+NODE_ENV=production
+HOST=0.0.0.0
+PAYMENT_MODE=rpc
+FRONTEND_ORIGIN=https://your-vercel-app.vercel.app
+GHS_PER_ETH=65000
+GHS_PER_USDC=15.50
+SEPOLIA_RPC_URL=...
+SIKAPAY_CONTRACT_ADDRESS=...
+SEPOLIA_PRIVATE_KEY=...
+SETTLEMENT_WALLET=...
+USDC_CONTRACT_ADDRESS=...
+SUPABASE_URL=...
+SUPABASE_PUBLISHABLE_KEY=...
+SUPABASE_SECRET_KEY=...
+```
+
+Do not manually set `PORT` on Render unless Render asks for it; the API already
+uses Render's provided `PORT`.
+
+### Frontend on Vercel
+
+Create a Vercel project from this repository root. `vercel.json` configures the
+Vite build and SPA routing.
+
+Set these Vercel environment variables:
+
+```env
+VITE_API_URL=https://your-render-api.onrender.com
+VITE_SUPABASE_URL=...
+VITE_SUPABASE_PUBLISHABLE_KEY=...
+VITE_CHAIN_ID=11155111
+VITE_SIKAPAY_CONTRACT_ADDRESS=...
+VITE_USDC_CONTRACT_ADDRESS=...
+VITE_WALLETCONNECT_PROJECT_ID=...
+VITE_ENABLE_MOCK_MODE=false
+```
+
+After deploying Vercel, add the Vercel URL to:
+
+- Render `FRONTEND_ORIGIN`
+- Supabase Auth Site URL / Redirect URLs
+
+On Render's free tier, open `/health` before presenting to wake the backend from
+sleep.
+
 Contract commands run from the API workspace:
 
 ```bash

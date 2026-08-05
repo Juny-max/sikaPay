@@ -1,0 +1,12 @@
+{
+  "framework": "vite",
+  "installCommand": "corepack enable && corepack pnpm install --frozen-lockfile",
+  "buildCommand": "corepack pnpm build",
+  "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/((?!assets/|favicon.ico|robots.txt).*)",
+      "destination": "/index.html"
+    }
+  ]
+}

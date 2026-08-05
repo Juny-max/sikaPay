@@ -1,0 +1,41 @@
+services:
+  - type: web
+    name: sikapay-api
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: corepack enable && corepack pnpm install --frozen-lockfile && corepack pnpm --filter sikapay-backend build
+    startCommand: corepack pnpm --filter sikapay-backend start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: PAYMENT_MODE
+        value: rpc
+      - key: FRONTEND_ORIGIN
+        sync: false
+      - key: GHS_PER_ETH
+        value: 65000
+      - key: GHS_PER_USDC
+        value: 15.50
+      - key: SEPOLIA_RPC_URL
+        sync: false
+      - key: SIKAPAY_CONTRACT_ADDRESS
+        sync: false
+      - key: SEPOLIA_PRIVATE_KEY
+        sync: false
+      - key: SETTLEMENT_WALLET
+        sync: false
+      - key: USDC_CONTRACT_ADDRESS
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: SUPABASE_SECRET_KEY
+        sync: false
