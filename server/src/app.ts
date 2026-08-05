@@ -25,6 +25,11 @@ const paymentSchema = z.object({
   cryptoAmount: z.string().regex(/^\d+(\.\d+)?$/)
 });
 
+const quoteSchema = z.object({
+  invoiceReference: z.string().trim().min(1),
+  asset: z.enum(["ETH", "USDC"])
+});
+
 const merchantSchema = z.object({
   businessName: z.string().trim().min(2).max(120),
   momoPhone: z.string().regex(/^\+?233\d{9}$/, "Use a Ghana number such as +233241234567")
@@ -35,6 +40,22 @@ export function createApp() {
   app.use(helmet());
   app.use(cors({ origin: config.FRONTEND_ORIGIN.split(",").map((value) => value.trim()) }));
   app.use(express.json({ limit: "32kb" }));
+
+  app.get("/", (_request, response) => {
+    response.json({
+      service: "SikaPay API",
+      status: "running",
+      mode: config.PAYMENT_MODE,
+      frontend: config.FRONTEND_ORIGIN.split(",")[0],
+      endpoints: {
+        health: "/health",
+        currentUser: "/api/me",
+        merchantProfile: "/api/merchants/me",
+        invoices: "/api/invoices",
+        payments: "/api/payments"
+      }
+    });
+  });
 
   app.get("/health", (_request, response) => {
     response.json({ status: "ok", service: "sikapay-api", mode: config.PAYMENT_MODE });
@@ -81,6 +102,17 @@ export function createApp() {
     const input = paymentSchema.parse(request.body);
     const payment = await paymentService.process(input);
     response.status(201).json({ data: payment });
+  });
+
+  app.post("/api/payments/quote", (request, response) => {
+    const input = quoteSchema.parse(request.body);
+    response.json({ data: paymentService.quote(input.invoiceReference, input.asset) });
+  });
+
+  app.get("/api/payments/:id", (request, response) => {
+    const payment = store.getPaymentById(request.params.id);
+    if (!payment) return response.status(404).json({ error: { code: "PAYMENT_NOT_FOUND", message: "Payment not found" } });
+    return response.json({ data: payment });
   });
 
   app.get("/api/payments", requireAuth, async (request, response) => {

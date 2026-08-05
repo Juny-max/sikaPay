@@ -1,5 +1,11 @@
-import "dotenv/config";
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
+import dotenv from "dotenv";
 import { z } from "zod";
+
+const localEnv = resolve(process.cwd(), ".env");
+const parentEnv = resolve(process.cwd(), "../.env");
+dotenv.config({ path: existsSync(localEnv) ? localEnv : parentEnv });
 
 const schema = z.object({
   PORT: z.coerce.number().int().positive().default(4000),

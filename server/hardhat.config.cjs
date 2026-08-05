@@ -1,5 +1,6 @@
 require("@nomicfoundation/hardhat-toolbox");
-require("dotenv").config();
+const path = require("node:path");
+require("dotenv").config({ path: path.resolve(__dirname, "../.env") });
 
 const privateKey = process.env.SEPOLIA_PRIVATE_KEY;
 
