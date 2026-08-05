@@ -1,0 +1,39 @@
+SikaPay Proprietary License
+
+Copyright (c) 2026 SikaPay. All rights reserved.
+
+This repository and all source code, smart contracts, documentation, designs,
+assets, workflows, business logic, product concepts, and related materials
+contained in it are the confidential and proprietary property of SikaPay and
+its contributors, unless a file clearly states otherwise.
+
+Public access to this repository is provided only for review, evaluation,
+portfolio, hackathon judging, and collaboration expressly authorized by SikaPay.
+No license is granted to use, copy, modify, publish, distribute, sublicense,
+sell, host, deploy, reverse engineer, create derivative works from, or otherwise
+exploit any part of this repository without prior written permission from
+SikaPay.
+
+You may not use the SikaPay name, logo, brand identity, product design, payment
+flow, business model, user interface, smart contract design, or related product
+ideas in a way that suggests ownership, endorsement, affiliation, or a competing
+implementation without prior written permission from SikaPay.
+
+Any unauthorized use, reproduction, distribution, deployment, or commercial
+exploitation of this repository or its contents is strictly prohibited.
+
+If you have been invited to contribute to this repository, your contribution is
+submitted to SikaPay for inclusion in the proprietary SikaPay product. Unless a
+separate written agreement says otherwise, you agree that SikaPay may use,
+modify, distribute, and commercialize your contribution as part of SikaPay.
+
+Third-party dependencies, trademarks, images, fonts, libraries, and services
+referenced by this repository remain subject to their own licenses and terms.
+This license does not override those third-party rights.
+
+THE MATERIALS ARE PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR
+A PARTICULAR PURPOSE, NON-INFRINGEMENT, SECURITY, OR ERROR-FREE OPERATION.
+
+For permission requests, partnership inquiries, or licensing discussions,
+contact the SikaPay team.

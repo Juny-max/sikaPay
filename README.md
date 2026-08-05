@@ -84,6 +84,13 @@ corepack pnpm --filter sikapay-backend contract:compile
 corepack pnpm --filter sikapay-backend contract:test
 ```
 
+## License
+
+SikaPay is proprietary software. The repository may be public for review,
+collaboration, or hackathon judging, but the code, product design, brand,
+business logic, and smart contract flow are not open-source. See `LICENSE` for
+the full terms.
+
 ## Main API routes
 
 | Method | Endpoint | Access |

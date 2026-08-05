@@ -39,6 +39,13 @@ export const sikaPayAbi = [{
 
 export const invoiceOnchainId = (reference: string): Hex => keccak256(stringToHex(reference));
 
+const publicClient = () => {
+  if (!config.SEPOLIA_RPC_URL || !config.SIKAPAY_CONTRACT_ADDRESS) {
+    throw new Error("RPC_NOT_CONFIGURED");
+  }
+  return createPublicClient({ chain: sepolia, transport: http(config.SEPOLIA_RPC_URL) });
+};
+
 export async function createInvoiceOnchain(reference: string, merchantId: string): Promise<Hex> {
   if (!config.SEPOLIA_RPC_URL || !config.SIKAPAY_CONTRACT_ADDRESS || !config.SEPOLIA_PRIVATE_KEY) {
     throw new Error("RPC_NOT_CONFIGURED");
@@ -69,14 +76,11 @@ export async function verifyPaymentReceipt(
   txHash: Hex,
   reference: string
 ): Promise<VerifiedChainPayment> {
-  if (!config.SEPOLIA_RPC_URL || !config.SIKAPAY_CONTRACT_ADDRESS) {
-    throw new Error("RPC_NOT_CONFIGURED");
-  }
-  const client = createPublicClient({ chain: sepolia, transport: http(config.SEPOLIA_RPC_URL) });
+  const client = publicClient();
   const receipt = await client.getTransactionReceipt({ hash: txHash });
   if (receipt.status !== "success") throw new Error("TRANSACTION_REVERTED");
 
-  const contractAddress = config.SIKAPAY_CONTRACT_ADDRESS.toLowerCase();
+  const contractAddress = (config.SIKAPAY_CONTRACT_ADDRESS as Address).toLowerCase();
   const expectedInvoiceId = invoiceOnchainId(reference).toLowerCase();
   for (const log of receipt.logs) {
     if (log.address.toLowerCase() !== contractAddress) continue;
@@ -102,4 +106,24 @@ export async function verifyPaymentReceipt(
     }
   }
   throw new Error("PAYMENT_EVENT_NOT_FOUND");
+}
+
+export async function getTransactionBlockNumber(txHash: Hex): Promise<bigint> {
+  const client = publicClient();
+  const receipt = await client.getTransactionReceipt({ hash: txHash });
+  return receipt.blockNumber;
+}
+
+export async function findPaymentTransactionForInvoice(reference: string, fromBlock = 0n): Promise<Hex | undefined> {
+  const client = publicClient();
+  const invoiceId = invoiceOnchainId(reference);
+  const contractAddress = config.SIKAPAY_CONTRACT_ADDRESS as Address;
+  const logs = await client.getLogs({
+    address: contractAddress,
+    event: sikaPayAbi[0],
+    args: { invoiceId },
+    fromBlock,
+    toBlock: "latest"
+  });
+  return logs.at(-1)?.transactionHash;
 }

@@ -89,11 +89,11 @@ export function createApp() {
     const user = (request as AuthenticatedRequest).authUser;
     const merchant = await getMerchantForUser(user.id);
     if (!merchant) throw new Error("MERCHANT_PROFILE_REQUIRED");
-    response.json({ data: store.listInvoices(merchant.id) });
+    response.json({ data: await store.listInvoices(merchant.id) });
   });
 
-  app.get("/api/invoices/:reference", (request, response) => {
-    const invoice = store.getInvoice(request.params.reference);
+  app.get("/api/invoices/:reference", async (request, response) => {
+    const invoice = await store.getInvoice(request.params.reference);
     if (!invoice) return response.status(404).json({ error: { code: "INVOICE_NOT_FOUND", message: "Invoice not found" } });
     return response.json({ data: invoice });
   });
@@ -104,13 +104,18 @@ export function createApp() {
     response.status(201).json({ data: payment });
   });
 
-  app.post("/api/payments/quote", (request, response) => {
+  app.post("/api/payments/quote", async (request, response) => {
     const input = quoteSchema.parse(request.body);
-    response.json({ data: paymentService.quote(input.invoiceReference, input.asset) });
+    response.json({ data: await paymentService.quote(input.invoiceReference, input.asset) });
   });
 
-  app.get("/api/payments/:id", (request, response) => {
-    const payment = store.getPaymentById(request.params.id);
+  app.post("/api/payments/reconcile", async (request, response) => {
+    const { invoiceReference } = z.object({ invoiceReference: z.string().trim().min(1) }).parse(request.body);
+    response.json({ data: await paymentService.reconcile(invoiceReference) });
+  });
+
+  app.get("/api/payments/:id", async (request, response) => {
+    const payment = await store.getPaymentById(request.params.id);
     if (!payment) return response.status(404).json({ error: { code: "PAYMENT_NOT_FOUND", message: "Payment not found" } });
     return response.json({ data: payment });
   });
@@ -119,7 +124,7 @@ export function createApp() {
     const user = (request as AuthenticatedRequest).authUser;
     const merchant = await getMerchantForUser(user.id);
     if (!merchant) throw new Error("MERCHANT_PROFILE_REQUIRED");
-    response.json({ data: store.listPayments(merchant.id) });
+    response.json({ data: await store.listPayments(merchant.id) });
   });
 
   app.get("/api/events/merchants/:merchantId", (request, response) => {

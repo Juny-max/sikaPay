@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { config } from "./config.js";
-import { createInvoiceOnchain, invoiceOnchainId, verifyPaymentReceipt } from "./contract.js";
+import { createInvoiceOnchain, findPaymentTransactionForInvoice, getTransactionBlockNumber, invoiceOnchainId, verifyPaymentReceipt } from "./contract.js";
 import { store, type MemoryStore } from "./store.js";
 import type { Asset, Invoice, Payment } from "./types.js";
 
@@ -55,7 +55,7 @@ export class InvoiceService {
     if (config.PAYMENT_MODE === "rpc") {
       invoice.onchainCreationTxHash = await createInvoiceOnchain(reference, input.merchantId);
     }
-    this.database.createInvoice(invoice);
+    await this.database.createInvoice(invoice);
     merchantEvents.publish(invoice.merchantId, "invoice.created", invoice);
     return invoice;
   }
@@ -64,8 +64,8 @@ export class InvoiceService {
 export class PaymentService {
   constructor(private readonly database: MemoryStore = store) {}
 
-  quote(invoiceReference: string, asset: Asset): { cryptoAmount: string; exchangeRate: number } {
-    const invoice = this.database.getInvoice(invoiceReference);
+  async quote(invoiceReference: string, asset: Asset): Promise<{ cryptoAmount: string; exchangeRate: number }> {
+    const invoice = await this.database.getInvoice(invoiceReference);
     if (!invoice) throw new Error("INVOICE_NOT_FOUND");
     if (new Date(invoice.expiresAt) < new Date()) throw new Error("INVOICE_EXPIRED");
     if (invoice.status === "PAID") throw new Error("INVOICE_ALREADY_PAID");
@@ -81,16 +81,16 @@ export class PaymentService {
     asset: Asset;
     cryptoAmount: string;
   }): Promise<Payment> {
-    const existing = this.database.getPayment(input.txHash);
+    const existing = await this.database.getPayment(input.txHash);
     if (existing) return existing;
 
-    const invoice = this.database.getInvoice(input.invoiceReference);
+    const invoice = await this.database.getInvoice(input.invoiceReference);
     if (!invoice) throw new Error("INVOICE_NOT_FOUND");
     if (new Date(invoice.expiresAt) < new Date()) throw new Error("INVOICE_EXPIRED");
     if (invoice.status === "PAID") throw new Error("INVOICE_ALREADY_PAID");
 
     invoice.status = "PROCESSING";
-    this.database.saveInvoice(invoice);
+    await this.database.saveInvoice(invoice);
     merchantEvents.publish(invoice.merchantId, "payment.processing", invoice);
 
     let verifiedInput = input;
@@ -102,7 +102,7 @@ export class PaymentService {
         confirmedAt = verified.confirmedAt;
       } catch (error) {
         invoice.status = "FAILED";
-        this.database.saveInvoice(invoice);
+        await this.database.saveInvoice(invoice);
         throw error;
       }
     }
@@ -111,7 +111,7 @@ export class PaymentService {
     const calculatedGhs = Number(verifiedInput.cryptoAmount) * exchangeRate;
     if (!Number.isFinite(calculatedGhs) || calculatedGhs + 0.01 < invoice.amountGhs) {
       invoice.status = "FAILED";
-      this.database.saveInvoice(invoice);
+      await this.database.saveInvoice(invoice);
       throw new Error("UNDERPAYMENT");
     }
 
@@ -132,9 +132,32 @@ export class PaymentService {
 
     invoice.status = "PAID";
     invoice.payment = payment;
-    this.database.savePayment(payment);
-    this.database.saveInvoice(invoice);
+    await this.database.savePayment(payment);
+    await this.database.saveInvoice(invoice);
     merchantEvents.publish(invoice.merchantId, "payment.completed", invoice);
     return payment;
+  }
+
+  async reconcile(invoiceReference: string): Promise<Payment> {
+    const invoice = await this.database.getInvoice(invoiceReference);
+    if (!invoice) throw new Error("INVOICE_NOT_FOUND");
+    if (invoice.payment) return invoice.payment;
+    const existing = this.database.listPayments(invoice.merchantId)
+      .then((payments) => payments.find((payment) => payment.invoiceReference === invoice.reference));
+    const saved = await existing;
+    if (saved) return saved;
+    const fromBlock = invoice.onchainCreationTxHash
+      ? await getTransactionBlockNumber(invoice.onchainCreationTxHash)
+      : 0n;
+    const txHash = await findPaymentTransactionForInvoice(invoice.reference, fromBlock);
+    if (!txHash) throw new Error("PAYMENT_EVENT_NOT_FOUND");
+    const verified = await verifyPaymentReceipt(txHash, invoice.reference);
+    return this.process({
+      invoiceReference: invoice.reference,
+      txHash,
+      senderAddress: verified.senderAddress,
+      asset: verified.asset,
+      cryptoAmount: verified.cryptoAmount
+    });
   }
 }

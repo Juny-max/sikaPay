@@ -13,6 +13,9 @@ export async function preparePayment(invoice:Invoice,token:SupportedToken):Promi
 export async function submitPayment(input:{invoiceReference:string;txHash:`0x${string}`;senderAddress:`0x${string}`;asset:SupportedToken;cryptoAmount:string}){
   return mapPayment((await request<BackendDataResponse<BackendPayment>>('/api/payments',{method:'POST',body:JSON.stringify(input)})).data);
 }
+export async function reconcilePayment(invoiceReference:string){
+  return mapPayment((await request<BackendDataResponse<BackendPayment>>('/api/payments/reconcile',{method:'POST',body:JSON.stringify({invoiceReference})})).data);
+}
 export async function getPayment(id:string):Promise<Payment|undefined>{
   if(isMockMode)return mockStore.payments().find(payment=>payment.transactionId===id);
   return mapPayment((await request<BackendDataResponse<BackendPayment>>(`/api/payments/${encodeURIComponent(id)}`)).data);

@@ -25,7 +25,7 @@ describe("SikaPay payment flow", () => {
     });
 
     expect(payment.payout.status).toBe("SUCCESS");
-    expect(database.getInvoice(invoice.reference)?.status).toBe("PAID");
+    await expect(database.getInvoice(invoice.reference)).resolves.toMatchObject({ status: "PAID" });
   });
 
   it("rejects an underpayment", async () => {
