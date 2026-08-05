@@ -165,6 +165,7 @@ export function createApp() {
       MERCHANT_PROFILE_REQUIRED: 409
     };
     const code = error instanceof Error ? error.message : "INTERNAL_ERROR";
+    if (statusByCode[code] === undefined) console.error("Unhandled API error", error);
     response.status(statusByCode[code] ?? 500).json({ error: { code, message: code.replaceAll("_", " ").toLowerCase() } });
   };
   app.use(errorHandler);

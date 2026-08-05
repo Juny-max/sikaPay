@@ -103,6 +103,7 @@ pnpm --filter sikapay-backend start
 Set these Render environment variables in the dashboard:
 
 ```env
+NODE_VERSION=22
 NODE_ENV=production
 HOST=0.0.0.0
 PAYMENT_MODE=rpc
