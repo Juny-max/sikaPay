@@ -4,8 +4,8 @@ Copyright (c) 2026 SikaPay. All rights reserved.
 
 This repository and all source code, smart contracts, documentation, designs,
 assets, workflows, business logic, product concepts, and related materials
-contained in it are the confidential and proprietary property of SikaPay and
-its contributors, unless a file clearly states otherwise.
+contained in it are the proprietary property of SikaPay and its contributors,
+unless a file clearly states otherwise.
 
 Public access to this repository is provided only for review, evaluation,
 portfolio, hackathon judging, and collaboration expressly authorized by SikaPay.
@@ -21,6 +21,8 @@ implementation without prior written permission from SikaPay.
 
 Any unauthorized use, reproduction, distribution, deployment, or commercial
 exploitation of this repository or its contents is strictly prohibited.
+Unauthorized use may result in legal action, including claims for injunctive
+relief, damages, fees, and any other remedies available under applicable law.
 
 If you have been invited to contribute to this repository, your contribution is
 submitted to SikaPay for inclusion in the proprietary SikaPay product. Unless a
